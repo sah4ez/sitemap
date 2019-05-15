@@ -1,10 +1,12 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -83,6 +85,25 @@ func (p *Parser) Get() ([]byte, error) {
 	}
 	resp.Body.Close()
 	return b, nil
+}
+
+func P(u string) *Parser {
+	p := New(u)
+	b, err := p.Get()
+	if err != nil {
+		fmt.Println("error get:", err)
+	}
+	if b == nil {
+		return nil
+	}
+
+	doc, err := html.Parse(bytes.NewReader(b))
+	if err != nil {
+		fmt.Println("error read body:", err)
+		os.Exit(2)
+	}
+	p.Parse(doc)
+	return p
 }
 
 func New(u string) *Parser {
