@@ -36,6 +36,9 @@ func (p *Parser) Parse(n *html.Node) {
 		case "a":
 			for _, a := range n.Attr {
 				if a.Key == "href" {
+					if strings.HasPrefix(a.Val, "mailto:") {
+						break
+					}
 					if strings.HasPrefix(a.Val, "/") {
 						u, _ := url.Parse(a.Val)
 						if u.Scheme == "" {
