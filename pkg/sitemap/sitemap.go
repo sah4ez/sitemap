@@ -12,6 +12,7 @@ import (
 
 const (
 	Header = `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
+	Offset = "    "
 )
 
 type Urlset struct {
@@ -46,7 +47,7 @@ func (us *Urlset) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("marshalling error: %s", err)
 	}
-	pretty, _ := util.Prettify(string(b), "    ")
+	pretty, _ := util.Prettify(string(b), Offset)
 	pretty = Header + pretty
 	err = ioutil.WriteFile(path, []byte(pretty), 0644)
 	if err != nil {

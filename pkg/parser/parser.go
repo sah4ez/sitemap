@@ -30,7 +30,7 @@ func (p *Parser) Parse(n *html.Node) {
 			for _, a := range n.Attr {
 				if a.Key == "href" {
 					p.Base = a.Val
-					fmt.Println("base", a.Val)
+					//fmt.Println("base", a.Val)
 					break
 				}
 			}
