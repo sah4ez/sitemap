@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 )
@@ -17,9 +17,10 @@ var (
 )
 
 type Parser struct {
-	Base string
-	Url  string
-	Urls map[string]struct{}
+	Base   string
+	Url    string
+	Urls   map[string]struct{}
+	Client *http.Client
 }
 
 func (p *Parser) Parse(n *html.Node) {
@@ -78,7 +79,7 @@ func (p *Parser) Parse(n *html.Node) {
 }
 
 func (p *Parser) Get() ([]byte, error) {
-	resp, err := http.Get(p.Url)
+	resp, err := p.Client.Get(p.Url)
 	if err != nil {
 		return nil, fmt.Errorf("error http get: %s", err)
 	}
@@ -90,8 +91,19 @@ func (p *Parser) Get() ([]byte, error) {
 	return b, nil
 }
 
-func P(u string) *Parser {
-	p := New(u)
+func Pool(size int) chan *Parser {
+	pool := make(chan *Parser, size)
+
+	for i := 0; i < size; i++ {
+		pool <- New()
+	}
+	return pool
+}
+
+func P(pool chan *Parser, u string) map[string]struct{} {
+	p := <-pool
+	defer func() { pool <- p }()
+	p.Url = u
 	b, err := p.Get()
 	if err != nil {
 		fmt.Println("error get:", err)
@@ -103,15 +115,17 @@ func P(u string) *Parser {
 	doc, err := html.Parse(bytes.NewReader(b))
 	if err != nil {
 		fmt.Println("error read body:", err)
-		os.Exit(2)
+		return nil
 	}
 	p.Parse(doc)
-	return p
+	return p.Urls
 }
 
-func New(u string) *Parser {
+func New() *Parser {
 	return &Parser{
-		Url:  u,
 		Urls: map[string]struct{}{},
+		Client: &http.Client{
+			Timeout: time.Second * 15,
+		},
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -28,27 +29,27 @@ func init() {
 }
 
 func main() {
+	us := sitemap.New()
+
 	urlStr := os.Args[len(os.Args)-1]
 	if !strings.HasSuffix(urlStr, "/") {
 		urlStr += "/"
 	}
+	parsers := parser.Pool(*parallel + 1)
 
-	p := parser.P(urlStr)
-
-	us := sitemap.New()
-
-	pool := make(chan *walker.Walk, *parallel+1)
-
-	for i := 0; i < *parallel+1; i++ {
-		var w walker.Walk
-		pool <- &w
+	urls := parser.P(parsers, urlStr)
+	if urls == nil {
+		fmt.Println("could not get parser")
+		os.Exit(2)
 	}
 
+	walkers := walker.Pool((2 * *parallel) + 1)
+
 	wg := &sync.WaitGroup{}
-	for k := range p.Urls {
+	for k := range urls {
 		wg.Add(1)
-		w := <-pool
-		go w.Deep(0, maxDepth, k, us, pool, wg)
+		w := <-walkers
+		go w.Deep(0, maxDepth, k, us, walkers, parsers, wg)
 	}
 
 	wg.Wait()

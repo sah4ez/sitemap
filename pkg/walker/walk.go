@@ -10,13 +10,13 @@ import (
 
 type Walk func(int, string, *sitemap.Urlset, chan *Walk, *sync.WaitGroup)
 
-func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset, pool chan *Walk, wg *sync.WaitGroup) {
+func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset, walkers chan *Walk, parsers chan *parser.Parser, wg *sync.WaitGroup) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
 		}
-		if pool != nil {
-			pool <- w
+		if walkers != nil {
+			walkers <- w
 		}
 	}()
 
@@ -24,14 +24,24 @@ func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset,
 	if level >= *maxDepth {
 		return
 	}
-	p := parser.P(urlStr)
-	if p == nil {
+	urls := parser.P(parsers, urlStr)
+	if urls == nil {
 		return
 	}
 
 	l := level + 1
-	for k := range p.Urls {
-		w.Deep(l, maxDepth, k, us, nil, nil)
+	for k := range urls {
+		w.Deep(l, maxDepth, k, us, nil, parsers, nil)
 		us.Add(k)
 	}
+}
+
+func Pool(size int) chan *Walk {
+	pool := make(chan *Walk, size)
+
+	for i := 0; i < size; i++ {
+		var w Walk
+		pool <- &w
+	}
+	return pool
 }
