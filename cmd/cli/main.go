@@ -49,7 +49,7 @@ func main() {
 	for k := range urls {
 		wg.Add(1)
 		w := <-walkers
-		go w.Deep(0, maxDepth, k, us, walkers, parsers, wg)
+		go w.Deep(0, *maxDepth, k, us, walkers, parsers, wg)
 	}
 
 	wg.Wait()

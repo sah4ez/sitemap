@@ -8,9 +8,9 @@ import (
 	"github.com/sah4ez/sitemap/pkg/sitemap"
 )
 
-type Walk func(int, string, *sitemap.Urlset, chan *Walk, *sync.WaitGroup)
+type Walk struct{}
 
-func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset, walkers chan *Walk, parsers chan *parser.Parser, wg *sync.WaitGroup) {
+func (w Walk) Deep(level int, maxDepth int, urlStr string, us *sitemap.Urlset, walkers chan Walk, parsers chan *parser.Parser, wg *sync.WaitGroup) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
@@ -20,8 +20,8 @@ func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset,
 		}
 	}()
 
-	fmt.Println("level", level, "depth", *maxDepth)
-	if level >= *maxDepth {
+	fmt.Println("level", level, "depth", maxDepth)
+	if level >= maxDepth {
 		return
 	}
 	urls := parser.P(parsers, urlStr)
@@ -36,12 +36,11 @@ func (w *Walk) Deep(level int, maxDepth *int, urlStr string, us *sitemap.Urlset,
 	}
 }
 
-func Pool(size int) chan *Walk {
-	pool := make(chan *Walk, size)
+func Pool(size int) chan Walk {
+	pool := make(chan Walk, size)
 
 	for i := 0; i < size; i++ {
-		var w Walk
-		pool <- &w
+		pool <- Walk{}
 	}
 	return pool
 }

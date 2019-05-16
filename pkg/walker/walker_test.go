@@ -39,8 +39,7 @@ title
 	w := <-walkers
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	var depth = 1
-	w.Deep(0, &depth, "http://127.0.0.1:10000/3", us, walkers, parsers, wg)
+	w.Deep(0, 1, "http://127.0.0.1:10000/3", us, walkers, parsers, wg)
 	wg.Wait()
 	select {
 	case <-time.After(20 * time.Second):
